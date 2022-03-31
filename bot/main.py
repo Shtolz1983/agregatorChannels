@@ -3,8 +3,9 @@ import asyncio
 import aioredis
 from telethon import TelegramClient, events, utils
 from telethon.sessions import StringSession
-from telethon.tl.types import MessageActionChannelCreate, MessageFwdHeader, PeerChannel, UpdateChannel
+from telethon.tl.types import PeerChannel, UpdateChannel
 from config import API_ID, API_HASH, SESSION_STRING, REDIS_HOST
+from filters import check_post_from_channel, check_forward_post_from_channel, check_create_new_channel, check_spam
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -21,30 +22,6 @@ DELETE = 'del'  # карта соответствий сообщений в со
 # ключ: значение со временем жизни EXPIRED_TIME
 
 EXPIRED_TIME = 30 * 60 * 60  # 30 минут
-
-
-def check_create_new_channel(event):
-    try:
-        return isinstance(event.message.action, MessageActionChannelCreate)
-    except AttributeError:
-        return False
-
-
-def check_forward_post_from_channel(event):
-    try:
-        res = isinstance(event.message.fwd_from, MessageFwdHeader) \
-              and isinstance(event.message.peer_id, PeerChannel)
-        return res
-    except AttributeError:
-        return False
-
-
-def check_post_from_channel(event):
-    try:
-
-        return event.message.post  # and event.message.fwd_from is None
-    except AttributeError:
-        return False
 
 
 @client.on(events.Raw(func=check_create_new_channel))  # ловим event: создание канала пользователем
@@ -90,7 +67,8 @@ async def describe_handler(event):
         logger.info(f'describe: {channel_id} is {bool(res)}')
 
 
-@client.on(events.NewMessage(func=check_post_from_channel))  # обрабатывает все новые посты в каналах,
+@client.on(events.NewMessage(func=check_post_from_channel))  # обрабатывает все новые посты в каналах
+@client.on(events.NewMessage(func=check_spam))
 async def manager_handler(event):
     subscribe_channels = await redis.smembers(name=SUBSCRIBE_CHANNELS)
     if str(event.message.peer_id.channel_id) in subscribe_channels:  # появление сообщения только в подписанных каналах
@@ -103,6 +81,9 @@ async def manager_handler(event):
         create_channel_mark = utils.get_peer_id(PeerChannel(int(create_channel)))
         res = await client.forward_messages(create_channel_mark, event.message)  # перенаправляем сообщение в канал
         logger.info(f'Cообщение: {event.message.id} отправлено в канал {create_channel}')
+
+        await client.send_read_acknowledge(event.message.peer_id.channel_id, event.message, clear_mentions=True)  #
+        # помечает сообщение в подписанном канале как прочитанное
 
         id_delete = str(res.peer_id.channel_id) + '_' + str(res.id)
         await redis.setex(id_delete, EXPIRED_TIME, event.message.peer_id.channel_id)
@@ -126,6 +107,7 @@ async def delete_channel(event):
 
         res = await redis.srem(CREATE_CHANNELS, str(event.channel_id))
         logger.info(f'Канал: {event.channel_id} удален из CREATE_CHANNELS: {bool(res)}')
+
 
 
 with client:
