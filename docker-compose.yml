@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  redis:
+    image: redis:6.0-alpine
+    restart: "unless-stopped"
+    environment:
+      - REDIS_HOST
+      - VOLUMES_DIR
+    volumes:
+      - "~/${VOLUMES_DIR}/redis-config:/usr/local/etc/redis"
+      - "~/${VOLUMES_DIR}/redis-data:/data"
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+    ports:
+        - "6370:6379"
+  bot:
+      build: .
+      restart: "unless-stopped"
+      env_file: .env
+      depends_on:
+        - redis
+      logging:
+        driver: journald
+

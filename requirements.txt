@@ -1,0 +1,8 @@
+aioredis==2.0.1
+async-timeout==4.0.2
+pyaes==1.6.1
+pyasn1==0.4.8
+python-dotenv==0.20.0
+rsa==4.8
+Telethon==1.24.0
+typing_extensions==4.1.1
