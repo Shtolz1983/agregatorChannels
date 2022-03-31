@@ -42,7 +42,7 @@ def check_forward_post_from_channel(event):
 def check_post_from_channel(event):
     try:
 
-        return event.message.post and event.message.fwd_from is None
+        return event.message.post  # and event.message.fwd_from is None
     except AttributeError:
         return False
 
