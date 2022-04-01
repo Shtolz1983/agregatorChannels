@@ -5,7 +5,8 @@ from telethon import TelegramClient, events, utils
 from telethon.sessions import StringSession
 from telethon.tl.types import PeerChannel, UpdateChannel
 from config import API_ID, API_HASH, SESSION_STRING, REDIS_HOST
-from filters import check_post_from_channel, check_forward_post_from_channel, check_create_new_channel, check_spam
+from filters import check_forward_post_from_channel, check_create_new_channel, \
+    check_post_from_channel_with_spam_filter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -67,8 +68,8 @@ async def describe_handler(event):
         logger.info(f'describe: {channel_id} is {bool(res)}')
 
 
-@client.on(events.NewMessage(func=check_post_from_channel))  # обрабатывает все новые посты в каналах
-@client.on(events.NewMessage(func=check_spam))
+@client.on(events.NewMessage(func=check_post_from_channel_with_spam_filter))  # обрабатывает все новые посты в каналах
+# c учетом простой фильтрации спама по ключевым словам
 async def manager_handler(event):
     subscribe_channels = await redis.smembers(name=SUBSCRIBE_CHANNELS)
     if str(event.message.peer_id.channel_id) in subscribe_channels:  # появление сообщения только в подписанных каналах
@@ -107,8 +108,6 @@ async def delete_channel(event):
 
         res = await redis.srem(CREATE_CHANNELS, str(event.channel_id))
         logger.info(f'Канал: {event.channel_id} удален из CREATE_CHANNELS: {bool(res)}')
-
-
 
 with client:
     client.run_until_disconnected()
