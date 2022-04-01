@@ -12,8 +12,9 @@ A simple script that allows you to create a channel and subscribe other speciali
 ## Installation
 Make directories for bot's data:
 
-Grab `.env.dot` file, rename it to `.env`, open and fill the necessary data.
-How to get information about the API is described here: https://telethon.readthedocs.io/en/latest/basic/signing-in.html
+* Grab `.env.dot` file, rename it to `.env`, open and fill the necessary data.
+* How to get information about the api id and hash is described here: https://telethon.readthedocs.io/en/latest/basic/signing-in.html
+* To get the SESSION_STRING variable, run the login.py file
 
 Change `redis.conf` values for your preference.
 
