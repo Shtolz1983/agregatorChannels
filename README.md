@@ -1,6 +1,7 @@
 # agregatorChannels
 
-TODO describe 
+
+A simple script that allows you to create a channel and subscribe other specialized channels to it. So order the subscriptions and read only those. channels you have created. You can subscribe to a channel by forwarding a message from it to the created channel. In order to unsubscribe from the channel, you just need to delete the recent message.
 
 ### Used technologies
 * Python;
